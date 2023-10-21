@@ -5,8 +5,10 @@
 ; One thing I find kinda neat is that the state of previous (less significant) data pins are available as inputs for the functions the state
 ; for more significant data pins. The logic checker will only work correctly when generating from 0 to 65535.
 
+
+
 (defun nand (a b) 
-    (not (and a b)))()
+    (not (and a b)))
 
 (defun nor (a b) 
     (not (or a b)))
@@ -37,6 +39,11 @@
                               (setq ,s ,r)
                               (if (not (eq ,s ,r))
                                   (setq ,s :pass)))))))
+
+; Takes a list of truthy bits and turns them into a number
+(defun bton (bitlist)
+    (reduce (lambda (acc bit) (+ (* acc 2) (if bit 1 0) )) bitlist :initial-value 0))
+
 
 (defun check (state num)
   (if (eq state :pass)
@@ -147,7 +154,7 @@
 ;       o functions also have the output result of all the previous functions available, except for the first one (Output logic for pin D0) since there is no previous outputs.
 ;           Example: The function for D3 has (a0 a1 a2 a3 a4 a5 a6 a7 adr d0 d1 d2) available, and the function for D7 has all of them (a0..a7 + adr + d0..d6)
 
-(truth t "test.bin" 0 64
+(truth nil "test.bin" 0 65535
      (o (a0 a1 a2) (and a0 a1 a2))          ; Output logic for pin D0
      (o (a3 a4) (nand a3 a4))               ; Output logic for pin D1
      (o (a1) (not a1))                      ; Output logic for pin D2
@@ -158,4 +165,48 @@
      (o () :on)                             ; Output logic for pin D7
 )
 
+; This implements an adder capable of adding a carry, and two 7 bit numbers into a 7 bit result + carry
 
+; a0 - carry in
+; a1 - bit A1 in
+; a2 - bit B1 in
+; a3 - bit A2 in
+; a4 - bit B2 in
+; a5 - bit A3 in
+; a6 - bit B3 in
+; a7 - bit A4 in
+; a8 - bit B4 in
+; a9 - bit A5 in
+; a10 - bit B5 in
+; a11 - bit A6 in
+; a12 - bit B6 in
+; a13 - bit A7 in
+; a14 - bit B7 in
+;
+;d0 - sum bit 0 out
+;d1 - sum bit 1 out
+;d2 - sum bit 2 out
+;d3 - sum bit 3 out
+;d4 - sum bit 4 out
+;d5 - sum bit 5 out
+;d6 - sum bit 6 out
+;d7 - carry-out
+
+; Convenience function that implements a 7 bit adder (+carry in/out) and returns bit by position indicated in resbit
+(defun adder (carry-in A1 B1 A2 B2 A3 B3 A4 B4 A5 B5 A6 B6 A7 B7 resbit)
+    ; We just convert them back into lisp numbers and extract their bits ;)
+    (let ((na (bton (list a7  a6 a5 a4 a3 a2 a1 )))
+          (nb (bton (list b7  b6 b5 b4 b3 b2 b1 )))
+          (carry (bton (list carry-in))))
+        (logbitp resbit (+ na nb carry))))
+
+(truth nil "adder.bin" 0 65535
+     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 0))
+     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 1))
+     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 2))
+     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 3))
+     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 4))
+     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 5))
+     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 6))
+     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 7))
+)
