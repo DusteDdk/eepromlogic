@@ -162,3 +162,32 @@
      (q (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder2 a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 6))
      (q (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder2 a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 7))
 )
+
+
+
+
+; Example 6 - A binary to 7 segment decoder
+;
+; Wire up the 7 data-out pins (Q0..6) of the EEPROM as follows
+;  00
+; 5  1
+; 5  1
+;  66
+; 4  2
+; 4  2
+;  33
+;
+; And the binary number being presented on pins A0..4 (it will go blank if any number over 9 is presented on the lower 4 bits of the address)
+
+; Check if first provided number is among the rest
+(defun among (first &rest others)   (if (member first others) t nil))
+
+(truth nil "7segment.bin" 0 65535
+     (q (a0 a1 a2 a3 a4) (among (ltn (list a4 a3 a2 a1 a0)) 0 2 3 5 6 7 8 9 ))
+     (q (a0 a1 a2 a3 a4) (among (ltn (list a4 a3 a2 a1 a0)) 0 1 2 3 4 7 8 9 ))
+     (q (a0 a1 a2 a3 a4) (among (ltn (list a4 a3 a2 a1 a0)) 0 1 3 4 5 6 7 8 9 ))
+     (q (a0 a1 a2 a3 a4) (among (ltn (list a4 a3 a2 a1 a0)) 0 2 3 5 6 8 ))
+     (q (a0 a1 a2 a3 a4) (among (ltn (list a4 a3 a2 a1 a0)) 0 2 6 8 ))
+     (q (a0 a1 a2 a3 a4) (among (ltn (list a4 a3 a2 a1 a0)) 0 4 5 6 8 9))
+     (q (a0 a1 a2 a3 a4) (among (ltn (list a4 a3 a2 a1 a0)) 2 3 4 5 6 8 9 ))
+     (q () :off))
