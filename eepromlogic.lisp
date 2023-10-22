@@ -21,7 +21,7 @@
         #:off
         #:truth
         #:btn
-        #:ltnz
+        #:ltn
         #:q))
 
 (in-package :eeprom-logic)
@@ -64,7 +64,7 @@
 (defun btn (bit) (if bit 1 0))
 
 ; Takes a list of bits (t / nil) and turns them into a number
-(defun ltnz (bitlist)
+(defun ltn (bitlist)
     (reduce (lambda (acc bit) (+ (* acc 2) (btn bit) )) bitlist :initial-value 0))
 
 

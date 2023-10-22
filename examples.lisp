@@ -121,8 +121,8 @@
 ; Convenience function that implements a 7 bit adder (+carry in/out) and returns bit by position indicated in resbit
 (defun adder (carry-in A1 B1 A2 B2 A3 B3 A4 B4 A5 B5 A6 B6 A7 B7 resbit)
     ; We just convert them back into lisp numbers and extract their bits ;)
-    (let ((na (ltnz (list a7  a6 a5 a4 a3 a2 a1 )))
-          (nb (ltnz (list b7  b6 b5 b4 b3 b2 b1 )))
+    (let ((na (ltn (list a7  a6 a5 a4 a3 a2 a1 )))
+          (nb (ltn (list b7  b6 b5 b4 b3 b2 b1 )))
           (carry (btn (list carry-in))))
         (logbitp resbit (+ na nb carry))))
 
