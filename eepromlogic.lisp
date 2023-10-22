@@ -1,10 +1,30 @@
-; See bottom of file. Tool to generate truth-tables, to use 64 kbyte (16 bit address, 8 bit data) eeprom chips as programmable logic.
-; Fairly advanced functions can be defined, very easily.
+; An EEPROM memory chip can be used as a programmable logic device if you think of it this way:
+;           The address pins are input pins, the data pins are output pins, and the memory stores the bitpattern that results from the logic operation.
+;
+; This tool makes it very easy to generate such truth-tables, it allos you to use a 64 kbyte (16 bit address, 8 bit data) eeprom chip as programmable logic. (instead of a PLA for slow enough applications, for example)
+; Fairly advanced functions can be defined very easily.
 ; Disclaimer: I'm not an electronics person, and this is also my first "useful" lisp program, so, it's very ugly and inefficient and inelegant
-; and all the other in's of negative connotation. But it will work for my purpose.
-; One thing I find kinda neat is that the state of previous (less significant) data pins are available as inputs for the functions the state
-; for more significant data pins. The logic checker will only work correctly when generating from 0 to 65535.
+; and all the other "in's" of negative connotation. But it will work for my purpose.
+;
+; Check examples.lisp and README.md for info on how to use it.
+;
+; License: WTFPL
 
+(defpackage :eeprom-logic
+    (:use :cl)
+    (:export
+        #:nand
+        #:nor
+        #:xor
+        #:xnor
+        #:on
+        #:off
+        #:truth
+        #:btn
+        #:ltnz
+        #:q))
+
+(in-package :eeprom-logic)
 
 
 (defun nand (a b) 
@@ -20,7 +40,7 @@
 (defun xnor (a b)
         (not (xor a b)))
 
-(defmacro o ((&rest keys) &body body)
+(defmacro q ((&rest keys) &body body)
   `(lambda (inaddrbits)
      (destructuring-bind (&key ,@keys &allow-other-keys) inaddrbits
        (progn ,@body)  )))
@@ -40,9 +60,12 @@
                               (if (not (eq ,s ,r))
                                   (setq ,s :pass)))))))
 
-; Takes a list of truthy bits and turns them into a number
-(defun bton (bitlist)
-    (reduce (lambda (acc bit) (+ (* acc 2) (if bit 1 0) )) bitlist :initial-value 0))
+; takes a bit and turns it into either 0 or 1
+(defun btn (bit) (if bit 1 0))
+
+; Takes a list of bits (t / nil) and turns them into a number
+(defun ltnz (bitlist)
+    (reduce (lambda (acc bit) (+ (* acc 2) (btn bit) )) bitlist :initial-value 0))
 
 
 (defun check (state num)
@@ -50,6 +73,14 @@
         t
         (progn (format t "Logic error, bit ~A is stuck. If that is on purpose, return :on or :off to indicate it will never change. ~%" num) nil)))
 
+
+; The truth function takes the following arguments
+; show  truth table to console (t or NIL)
+; filename (string or nil) - where to write the binary file (ready for your eeprom) (unless nil, then we don't write)
+; start address (number)
+; stop address (number)
+; 8 Lambdas that determine the value of each bit for each input combination, use the o macro. 
+; Note the order: From LSB to MSB! (First lambda determines output state of bit 0 (the D0 or Q0 pin on the EEPROM))
 
 (defun truth (show outputfilename fistAddr lastAddr o0 o1 o2 o3 o4 o5 o6 o7)
 
@@ -109,7 +140,8 @@
 
             (if show 
                 (progn
-                 (format t "                                 ADDRESS  =>  DATA ~C" #\newline)
+                 (format t "                                 ADDRESS  =>  DATA ~%")
+                 (format t "        F E D C B A 9 8 7 6 5 4 3 2 1 0       7 6 5 4 3 2 1 0~%")
                     (loop for l in resultlist do 
                                (format t "  ~4,'0X ~A  => ~A ~4,'0X ~%" (getf l :adr) (getf l :adrbits) (getf l :databits) (getf l :datanumeric) ))))
 
@@ -125,110 +157,6 @@
                             (loop for l in resultlist do (write-byte (getf l :datanumeric) stream))))))
                 (progn
                     (format t "Logic check failed (Checked addresses ~4,'0X to ~4,'0X)~%" fistAddr lastaddr)
-                    (if outputfilename (format t "Not writing to file when there are errors. ~%" )))))))
-                      
-         
-
-; The truth function takes the following arguments
-; show  truth table to console (t or NIL)
-; filename (string or nil) - where to write the binary file (ready for your eeprom) (unless nil, then we don't write)
-; start address (number)
-; stop address (number)
-; o0 ... o7 Lambdas that determine the value of each bit for each input combination, use the o macro
-; Note the order: From LSB to MSB!
-
-; The example below example describes
-;   3 input AND gate with inputs from A0 A1 A2 and output on D0
-;   2 input NAND with input A3 A4 and output D1
-;   Inverter with input A1 and output D2
-;   Address 8 or 16 gives and output on D3 by checking the adr number rather than individual bits
-;   An XOR gate taking A5 and D0 as inputs, result on D4
-;   No other functions are implemented. D5 and D6 will always be low, and D7 will always be high.
-; Note: To not spam the console, only the first 64 entries are generated, to fill a whole 64k eeprom, use 65535 instead of 64.
-; Note: The last item in the list defined the behaviour of D0, the first defined behaviour of D7.
-; Note: The lisp-native operations (or, and) will take any number of arguments, while mine, (nand, nor, xor, xnor) take only two, so you must either define your own or nest them to achieve the type of logic you desire
-; Note: The logic can be whatever lisp operation you want, but it must return either t or nil.
-; Note: All o functions have available the following input variables: (a0 a1 a2 a3 a4 a5 a6 a7 adr)
-;       a0-7 are the t / nil boolean state of the address pin
-;       adr is the entire address as a normal number
-;       o functions also have the output result of all the previous functions available, except for the first one (Output logic for pin D0) since there is no previous outputs.
-;           Example: The function for D3 has (a0 a1 a2 a3 a4 a5 a6 a7 adr d0 d1 d2) available, and the function for D7 has all of them (a0..a7 + adr + d0..d6)
-
-(truth nil "test.bin" 0 65535
-     (o (a0 a1 a2) (and a0 a1 a2))          ; Output logic for pin D0
-     (o (a3 a4) (nand a3 a4))               ; Output logic for pin D1
-     (o (a1) (not a1))                      ; Output logic for pin D2
-     (o (adr) (or (eq adr 8) (eq adr 16)))  ; Output logic for pin D3
-     (o (a4 d0) (xor a4 d0))                ; Output logic for pin D4
-     (o () :off)                            ; Output logic for pin D5
-     (o () :off)                            ; Output logic for pin D6
-     (o () :on)                             ; Output logic for pin D7
-)
-
-; This implements an adder capable of adding a carry, and two 7 bit numbers into a 7 bit result + carry
-
-; a0 - carry in
-; a1 - bit A1 in
-; a2 - bit B1 in
-; a3 - bit A2 in
-; a4 - bit B2 in
-; a5 - bit A3 in
-; a6 - bit B3 in
-; a7 - bit A4 in
-; a8 - bit B4 in
-; a9 - bit A5 in
-; a10 - bit B5 in
-; a11 - bit A6 in
-; a12 - bit B6 in
-; a13 - bit A7 in
-; a14 - bit B7 in
-;
-;d0 - sum bit 0 out
-;d1 - sum bit 1 out
-;d2 - sum bit 2 out
-;d3 - sum bit 3 out
-;d4 - sum bit 4 out
-;d5 - sum bit 5 out
-;d6 - sum bit 6 out
-;d7 - carry-out
-
-; Convenience function that implements a 7 bit adder (+carry in/out) and returns bit by position indicated in resbit
-(defun adder (carry-in A1 B1 A2 B2 A3 B3 A4 B4 A5 B5 A6 B6 A7 B7 resbit)
-    ; We just convert them back into lisp numbers and extract their bits ;)
-    (let ((na (bton (list a7  a6 a5 a4 a3 a2 a1 )))
-          (nb (bton (list b7  b6 b5 b4 b3 b2 b1 )))
-          (carry (bton (list carry-in))))
-        (logbitp resbit (+ na nb carry))))
-
-(truth nil "adder.bin" 0 65535
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 0))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 1))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 2))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 3))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 4))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 5))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 6))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 7))
-)
-
-
-; Another, maybe more convenient to wire up? adder, organized so that:
-; a0 - carry-in
-; a1..a7 - number A
-; a8..14 - number B
-; d0..d6 - Sum of A+B
-; d7 - Carry out
-
-(defun adder2 (carry-in a1 a2 a3 a4 a5 a6 a7 b1 b2 b3 b4 b5 b6 b7 resbit)
-    (adder carry-in A1 B1 A2 B2 A3 B3 A4 B4 A5 B5 A6 B6 A7 B7 resbit))
-
-(truth nil "adder2.bin" 0 65535
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder2 a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 0))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder2 a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 1))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder2 a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 2))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder2 a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 3))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder2 a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 4))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder2 a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 5))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder2 a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 6))
-     (o (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14)  (adder2 a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 7))
-)
+                    (if outputfilename (format t "Not writing to file when there are errors. ~%" ))))
+            
+            resultlist)))
