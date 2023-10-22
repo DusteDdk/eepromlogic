@@ -12,7 +12,7 @@ A simple example, one of each of the common logic gates on an EEPROM, just progr
 
 ```lisp
 (truth nil "gates.bin" 0 65535
-       (q (a0 a1) (and a0 a1))          ; Input on A0 and A1. D0 = A0 AND A1
+       (q (a0 a1) (and a0 a1))          ; Input on A0 and A1. Output on D0
        (q (a2 a3) (or a2 a3))           ; D1
        (q (a4 a5) (xor a4 a5))          ; D2
        (q (a6) (not a6))                ; D3
