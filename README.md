@@ -11,6 +11,9 @@ Said even less elegant, whatever logic function you can dream up, as long as its
 A simple example, one of each of the common logic gates on an EEPROM, just program gates.bin to the chip and hook it up:
 
 ```lisp
+(load "eepromlogic.lisp")
+(use-package :eeprom-logic)
+
 (truth nil "gates.bin" 0 65535
        (q (a0 a1) (and a0 a1))          ; Input on A0 and A1. Output on D0
        (q (a2 a3) (or a2 a3))           ; D1
@@ -36,7 +39,7 @@ sbcl --load "examples.lisp"
 
 ## Documentation / Reference
 
-The following is made available:
+The following stuff is made available:
 
 * [truth](#truth) - Make truth table
 * [q](#Q) - Describe logic output
@@ -48,12 +51,6 @@ The following is made available:
 * [xnor](#gates) - 2 input logic
 
 Of course any LISP function (and/not/or and whatever you have) that returns t or nil can be used too.
-
-
-```lisp
-(load "eepromlogic.lisp")
-(use-package :eeprom-logic)
-```
 
 ### Which EEPROMs can I use ?
 You can use any eeprom arranged into 8 bytes, to 8 mbit, so the biggest one the 27080 (1Mx8).
