@@ -56,6 +56,7 @@ Of course any LISP function (and/not/or and whatever you have) that returns t or
 
 ### Which EEPROMs can I use ?
 You can use any eeprom arranged into 8 bytes, to 8 mbit, so the biggest one the 27080 (1Mx8).
+
 In my examples, I'm using a  27512 (64Kx8). Feel free to expand this to work with 16 bit chips.
 
 ### How to think about descibing logic
@@ -87,7 +88,7 @@ The truth function generates the truth table and shows it to screen and saves it
 * show - (t / nil) Print the truth table to console so we can check what we're doing
 * filename - (nil / string) Save the binary output to this file (if not nil)
 * firstAddr - Generate from this address (usually 0)
-* lastAddr - Generate to this addres (usaully 65535) but up to 
+* lastAddr - Generate to this address (see [eeprom sizes](#eeprom-sizes)))
 * q0 - Logic for EEPROM pin Q0
 * q1 - Logic for EEPROM pin Q1
 * q2 - Logic for EEPROM pin Q2
@@ -118,6 +119,29 @@ The truth function will check that all functions has returned both t and nil (th
 It will often fail when not generating the entire table.
 
 Use the :on and :off symbol to indicate that logic is not implemented for an output (see Q).
+
+#### EEPROM Sizes
+
+When requesting the address bits (a0..a19) note that requesting a pin that's not present on your chip will always yield zero for that bit.
+
+If you set the lastAddr value too small, your eeprom won't be fully programmed any floating address pins may generate wrong results.
+
+If you set the lastAddr value too large, the generated binary is too big and won't fit on the chip, you may truncate it, it might or might not work, but the logic check wouldn't have warned you if you requested address bits from pins not actually present on your chip.
+
+| Chip  |    Size | Arrangement | Available addresses | lastAddr |
+|-------|---------|-------------|---------------------|----------|
+| 27080 | 80 Mbit |      1M x 8 |           A0 to A19 |  #xFFFFF |
+| 27040 | 40 Mbit |    512K x 8 |           A0 to A18 |  #x7FFFF |
+| 27512 | 64 Kbit |     64K x 8 |           A0 to A15 |   #xFFFF |
+| 27256 | 32 Kbit |     32K x 8 |           A0 to A14 |   #x3FFF |
+| 27128 | 16 Kbit |     16K x 8 |           A0 to A13 |   #x1FFF |
+|  2764 | 64 Kbit |      8K x 8 |           A0 to A12 |    #xFFF |
+|  2732 | 32 Kbit |      4K x 8 |           A0 to A11 |    #x7FF |
+|  2716 | 16 Kbit |      2K x 8 |           A0 to A10 |    #x3FF |
+|   You |     get |         the |                idea |      now |
+|  2704 |  4 Kbit |     512 X 8 |            A0 to A8 |     #xFF |
+
+
 
 
 [To the top](#stuff-this-provides)
@@ -185,9 +209,9 @@ Of course you're allowed to mix them all, say this might be for o3
 
 #### Q Clarification
 
-The q macro allows you to "ask" for a0..a15 d0..d6 and adr and use those to determine the resulting state.
+The q macro allows you to "ask" for a0..a19 d0..d6 and adr and use those to determine the resulting state.
 
-adr is a number, a0..a15 and d0..d6 are boolean.
+adr is a number, a0..a19 and d0..d6 are boolean.
 
 Wonder how to tell the q macro which bit you're defining output state for ?
 

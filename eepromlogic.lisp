@@ -84,7 +84,7 @@
 
 (defun truth (show outputfilename fistAddr lastAddr o0 o1 o2 o3 o4 o5 o6 o7)
 
-    (format t "~% ~%Generating truth table...~%")
+    (format t " ~%Generating truth table...~%")
 
     
     (let ((s0 :new) (s1 :new) (s2 :new) (s3 :new) (s4 :new) (s5 :new) (s6 :new) (s7 :new))
@@ -136,16 +136,51 @@
                                                                     (if r0 1 0))))
                                                                                     
                                                                     (list :adr i :adrbits inaddrnumeric :databits databits :datanumeric (reduce (lambda (acc bit) (+ (* acc 2) bit )) databits :initial-value 0))))))))))))))))
-                                                             
             
-                          
-
             (if show 
                 (progn
-                 (format t "                                 ADDRESS  =>  DATA ~%")
-                 (format t "        F E D C B A 9 8 7 6 5 4 3 2 1 0       7 6 5 4 3 2 1 0~%")
-                    (loop for l in resultlist do 
-                               (format t "  ~4,'0X ~A  => ~A ~4,'0X ~%" (getf l :adr) (getf l :adrbits) (getf l :databits) (getf l :datanumeric) ))))
+                 (format t " ~%")
+                 (format t "       +--------------------- Address (Input State) ------------------+-- Data (Ouput State) ---+~%")
+                 (format t "       | 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0  |  7  6  5  4  3  2  1  0 |~%")
+                 (format t "       +--:--:--:--:--:--:--:--:--:--:--:--:--:--:--:--:--:--:--:--:--+--:--:--:--:--:--:--:--:-+~%")
+
+                 (loop for l in resultlist do  
+                 (format t " ~5,'0X |  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A  |  ~A  ~A  ~A  ~A  ~A  ~A  ~A  ~A | ~4,'0X ~%"
+                     (getf l :adr)
+                     (nth 0 (getf l :adrbits))
+                     (nth 1 (getf l :adrbits))
+                     (nth 2 (getf l :adrbits))
+                     (nth 3 (getf l :adrbits))
+                     (nth 4 (getf l :adrbits))
+                     (nth 5 (getf l :adrbits))
+                     (nth 6 (getf l :adrbits))
+                     (nth 7 (getf l :adrbits))
+                     (nth 8 (getf l :adrbits))
+                     (nth 9 (getf l :adrbits))
+                     (nth 10 (getf l :adrbits))
+                     (nth 11 (getf l :adrbits))
+                     (nth 12 (getf l :adrbits))
+                     (nth 13 (getf l :adrbits))
+                     (nth 14 (getf l :adrbits))
+                     (nth 15 (getf l :adrbits))
+                     (nth 16 (getf l :adrbits))
+                     (nth 17 (getf l :adrbits))
+                     (nth 18 (getf l :adrbits))
+                     (nth 19 (getf l :adrbits))
+                     (nth 0 (getf l :databits))
+                     (nth 1 (getf l :databits))
+                     (nth 2 (getf l :databits))
+                     (nth 3 (getf l :databits))
+                     (nth 4 (getf l :databits))
+                     (nth 5 (getf l :databits))
+                     (nth 6 (getf l :databits))
+                     (nth 7 (getf l :databits))
+                     (getf l :datanumeric)))
+                 (format t "       +--------------------------------------------------------------+-------------------------+~% ~%")
+                 ))
+                 
+                 
+
 
             
 
@@ -154,7 +189,7 @@
                     (format t "Logic check passed (Checked addresses ~4,'0X to ~4,'0X)~%" fistAddr lastaddr)
                     (if outputfilename 
                     (progn
-                        (format t ">> Writing to file: ~A ~%" outputfilename )
+                        (format t "Writing binary data to file: ~A ~%" outputfilename )
                         (with-open-file (stream outputfilename :direction :output :element-type '(unsigned-byte 8) :if-exists :supersede)
                             (loop for l in resultlist do (write-byte (getf l :datanumeric) stream))))))
                 (progn
