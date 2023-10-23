@@ -201,7 +201,7 @@ You can set the pin permanently high or low by using :on or :off
 [To the top](#stuff-this-provides)
 
 ### ltn
-Convert list of booleans to number.
+Convert list of booleans, representing a binary number to a number, most significant bit first in list.
 
 ```lisp
 (ltn (list t t nil)) ; => 6
