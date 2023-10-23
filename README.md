@@ -33,6 +33,8 @@ This is a very simple example, you're not limited to the logic of one gate per o
 ## How to run the examples ? 
 Sold? Carry on and read run the [examples.lisp](examples.lisp).
 
+There you'll find a few examples implementing gates, but also 7 bit full adders with different pinouts, and a binary to hex 7 segment display decoder.
+
 ```bash
 sbcl --load "examples.lisp"
 ```
