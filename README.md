@@ -122,11 +122,13 @@ Use the :on and :off symbol to indicate that logic is not implemented for an out
 
 #### EEPROM Sizes
 
-When requesting the address bits (a0..a19) note that requesting a pin that's not present on your chip will always yield zero for that bit.
+When generating a binary output file for programming into the EEPROM, be sure to select the correct firstAddr (always 0!) and lastAddr (see below).
 
 If you set the lastAddr value too small, your eeprom won't be fully programmed any floating address pins may generate wrong results.
 
 If you set the lastAddr value too large, the generated binary is too big and won't fit on the chip, you may truncate it, it might or might not work, but the logic check wouldn't have warned you if you requested address bits from pins not actually present on your chip.
+
+An easy way to set the right "lastAddr" is to simply count the address pins on your chip, and punch 1 for every pin, that binary number is your "lastAddr", you can prefix a binary number with ```#b``` and use it directly.
 
 | Chip  |    Size | Arrangement | Available addresses | lastAddr |
 |-------|---------|-------------|---------------------|----------|
@@ -142,7 +144,7 @@ If you set the lastAddr value too large, the generated binary is too big and won
 |  2704 |  4 Kbit |     512 X 8 |            A0 to A8 |     #xFF |
 
 
-
+Note: "truth" don't care if you request address bits for pins not on your chip, those bits will always be set to 0, and your logic will not work.
 
 [To the top](#stuff-this-provides)
 ### Q
