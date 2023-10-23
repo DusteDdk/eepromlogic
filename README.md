@@ -55,8 +55,12 @@ Of course any LISP function (and/not/or and whatever you have) that returns t or
 (use-package :eeprom-logic)
 ```
 
+### Which EEPROMs can I use ?
+You can use any eeprom arranged into 8 bytes, to 8 mbit, so the biggest one the 27080 (1Mx8).
+In my examples, I'm using a  27512 (64Kx8). Feel free to expand this to work with 16 bit chips.
+
 ### How to think about descibing logic
-When using this tool, it's helpful to have the right model of what you're doing, which is: describing a desired output state for a given input state.
+When using this tool, it's helpful to think of what you're doing in a certain way, which is: describing a desired output state for a given input state.
 
 Abstract enough for you? Okay, look at some chip, it has input pins and output pins, now, select a couple of input pins, and _ONE_ output pin.
 
@@ -84,7 +88,7 @@ The truth function generates the truth table and shows it to screen and saves it
 * show - (t / nil) Print the truth table to console so we can check what we're doing
 * filename - (nil / string) Save the binary output to this file (if not nil)
 * firstAddr - Generate from this address (usually 0)
-* lastAddr - Generate to this addres (usaully 65535)
+* lastAddr - Generate to this addres (usaully 65535) but up to 
 * q0 - Logic for EEPROM pin Q0
 * q1 - Logic for EEPROM pin Q1
 * q2 - Logic for EEPROM pin Q2
@@ -94,11 +98,11 @@ The truth function generates the truth table and shows it to screen and saves it
 * q6 - Logic for EEPROM pin Q6
 * q7 - Logic for EEPROM pin Q7
 
-You generally want "show" to be nil when doing a full 64 KiB generation, because, it's a lot of output nobody's ever going to read.
+You generally want "show" to be nil when generating the full truth-table, because, it's a lot of output nobody's ever going to read.
 
 "firstAddr" and "lastAddr" are useful when developing logic, generate a piece of the table and see if everything is as expected.
 
-If you want to check the output of just a single pattern, you can set them as the same value. The #b prefix to a number is convenient, so you can type in the binary pattern you want to see the output for. For example, to check only happens when both A0 and A2 is set, you could set them both to #b0000000000000101
+If you want to check the output of just a single pattern, you can set them as the same value. The #b prefix to a number is convenient, so you can type in the binary pattern you want to see the output for. For example, to check only happens when both A0 and A2 is set, you could set them both to #b101
 
 The "q" parameters are lambda functions, but don't let that scare you, they're easy to make with the ["q" macro](#q)
 

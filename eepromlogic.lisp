@@ -1,7 +1,7 @@
 ; An EEPROM memory chip can be used as a programmable logic device if you think of it this way:
 ;           The address pins are input pins, the data pins are output pins, and the memory stores the bitpattern that results from the logic operation.
 ;
-; This tool makes it very easy to generate such truth-tables, it allos you to use a 64 kbyte (16 bit address, 8 bit data) eeprom chip as programmable logic. (instead of a PLA for slow enough applications, for example)
+; This tool makes it very easy to generate such truth-tables, it allos you to use a eeprom chip as programmable logic. (instead of a PLA for slow enough applications, for example)
 ; Fairly advanced functions can be defined very easily.
 ; Disclaimer: I'm not an electronics person, and this is also my first "useful" lisp program, so, it's very ugly and inefficient and inelegant
 ; and all the other "in's" of negative connotation. But it will work for my purpose.
@@ -86,8 +86,6 @@
 
     (format t "~% ~%Generating truth table...~%")
 
-    (if (or (not (eq fistAddr 0)) (not (eq lastaddr (- (* 1024 64) 1))))
-            (format t "Note: Not writing a full 64kib eeprom, logic check fail, binary file might not work. ~%"))
     
     (let ((s0 :new) (s1 :new) (s2 :new) (s3 :new) (s4 :new) (s5 :new) (s6 :new) (s7 :new))
             
@@ -95,6 +93,10 @@
     (let ((resultlist (loop for i from fistAddr to lastAddr 
               collect (let ((inaddr (list
                             :adr i
+                            :a19 (logbitp 19 i)
+                            :a18 (logbitp 18 i)
+                            :a17 (logbitp 17 i)
+                            :a16 (logbitp 16 i)
                             :a15 (logbitp 15 i)
                             :a14 (logbitp 14 i)
                             :a13 (logbitp 13 i)
