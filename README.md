@@ -28,11 +28,11 @@ A simple example, one of each of the common logic gates on an EEPROM, just progr
 
 This is a very simple example, you're not limited to the logic of one gate per output, there's no limit on the amount of logic operations you can describe between the inputs and an pin.
 
-Sold? Carry on and read the [examples.lisp](examples.lisp).
-
-Docs below.
+* See documentation and examples below
 
 ## How to run the examples ? 
+Sold? Carry on and read run the [examples.lisp](examples.lisp).
+
 ```bash
 sbcl --load "examples.lisp"
 ```
@@ -46,7 +46,7 @@ The following stuff is made available:
 * [ltn](#ltn) - Convert list of booleans to number
 * [btn](#btn) - Convert boolean to number
 * [nand](#gates) - 2 input logic
-* [nor](#gates) - 2 input logic
+* [nor](#gates) - 2 input logicocs below.
 * [xor](#gates) - 2 input logic
 * [xnor](#gates) - 2 input logic
 
