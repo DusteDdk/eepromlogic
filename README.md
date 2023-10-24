@@ -1,14 +1,14 @@
 # Easily use EEPROMs as programmable logic
 
-Someone way smarter than me observed that one can use an EEPROM memory chip as a programmable logic device.
+Once upon a time in the old world, someone way smarter than me observed that EEPROM memory chips can be used as a programmable logic devices.
 
-That is, if you consider the address pins to be input pins, and the data pins to be output pins for which you can define arbitrarily complex (as long as it's stateless) logic functions for.
+You can consider the address pins as input pins, and the data pins as output pins. You can define arbitrarily complex logic expressions for each output pin.
 
 Said even less elegant, whatever logic function you can dream up, as long as its input relies only on the state of the input pins, you can make the EEPROM carry out.
 
 ## Example
 
-A simple example, one of each of the common logic gates on an EEPROM, just program gates.bin to the chip and hook it up:
+Example: One of each of the common logic gates, just write the generated "gates.bin" to the EEPROM chip and wire it up.
 
 ```lisp
 (load "eepromlogic.lisp")
@@ -26,14 +26,14 @@ A simple example, one of each of the common logic gates on an EEPROM, just progr
 )
 ```
 
-This is a very simple example, you're not limited to the logic of one gate per output, there's no limit on the amount of logic operations you can describe between the inputs and an pin.
+_This is a simple example.
+You're not limited to "one gate per output", your expressions can be as complex as you need. 
+See documentation and examples below._
 
-* See documentation and examples below
+## Examples
+Intrigued? Read and run the [examples.lisp](examples.lisp).
 
-## How to run the examples ? 
-Sold? Carry on and read run the [examples.lisp](examples.lisp).
-
-There you'll find a few examples implementing gates, but also 7 bit full adders with different pinouts, and a binary to hex 7 segment display decoder.
+The file contains a few examples of gates and other logic, such as 7 bit full adders with different pinouts, and a binary to hex 7 segment display decoder.
 
 ```bash
 sbcl --load "examples.lisp"
@@ -44,7 +44,7 @@ sbcl --load "examples.lisp"
 The following stuff is made available:
 
 * [truth](#truth) - Make truth table
-* [q](#Q) - Describe logic output
+* [q](#Q) - Create expression for output bit
 * [ltn](#ltn) - Convert list of booleans to number
 * [btn](#btn) - Convert boolean to number
 * [nand](#gates) - 2 input logic
@@ -52,83 +52,104 @@ The following stuff is made available:
 * [xor](#gates) - 2 input logic
 * [xnor](#gates) - 2 input logic
 
-Of course any LISP function (and/not/or and whatever you have) that returns t or nil can be used too.
+_Additionally, any LISP function can be used to build expressions._
 
 ### Which EEPROMs can I use ?
-You can use any eeprom arranged into 8 bytes, to 8 mbit, so the biggest one the 27080 (1Mx8).
+You can use any eeprom arranged into 8 bytes, with up to 20 address, see [EEPROM sizes](#eeprom-sizes).
 
-In my examples, I'm using a  27512 (64Kx8). Feel free to expand this to work with 16 bit chips.
+In my examples, I'm using an  Atmel AT27C512 (64Kx8). Feel free to expand this package to work with 16 bit chips.
+
 
 ### How to think about descibing logic
-When using this tool, it's helpful to think of what you're doing in a certain way, which is: describing a desired output state for a given input state.
+When using this tool, it's helpful to think of what you're doing in a certain way: You are describing a desired output state for a given input state.
 
 Abstract enough for you? Okay, look at some chip, it has input pins and output pins, now, select a couple of input pins, and _ONE_ output pin.
 
 You want to describe the logic that sets the state of that _ONE_ output pin based on those specific input pins. Nothing more, nothing less.
 
-Did that help ? If it did, this is for you.
+Basically, you will define 8 expressions, one for each output bit, which the "truth" function will then call, once for every possible bit combination, to generate the truth table.
 
-Basically, you will tell the "truth" function what to do with each of the 8 output pins. So you really want to get this straight, thinking about one output pin at a time.
+Always think about one _output_ pin at a time.
 
-That might feel constrained but it's not, because: You're totally free to use as many or as few of the input pins, in whatever combination you want..
+That might feel constrained but it's not. You're totally free to use _as many or as few_ of the input pins, in whatever combination you want, along with any lisp function, to build your expression.
 
-It's even okay for you to, for example, use the same input pins in the logic for muliple output pins.
+It's also fine to use the same input pins in the expressions for muliple output pins.
 
-I'll short circuit your brain later by telling you how you're allowed to use the OUTPUT state of some pins as inputs for the logic of other pins!
+_Start by having a look at the truth function and q macro._
 
 
 ### Truth
 
-The truth function generates the truth table and shows it to screen and saves it to binary file.
+* [Truth function](#truth-function)
+* [Truth logic check](#truth-checks)
+* [Truth lastAddr: EEPROM sizes](#eeprom-sizes)
+
+### Truth function
+
+The truth function generates the truth table. It can show it on the screen. It can also save it to a binary file, ready to write onto a EEPROM. This is the main function you'll want to call to do anything with this package.
 
 ```lisp
-(truth show filename firstAddr lastAddr q0 q1 q2 q3 q4 q5 q6 q7)
+(truth
+       show          ; Show truth table on console
+       filename      ; Save binary to file
+       firstAddr     ; Generate from this address
+       lastAddr      ; Generate to this address
+       q0            ; Logic expression for EEPROM pin Q0
+       q1            ; Logic expression for EEPROM pin Q1
+       q2            ; Logic expression for EEPROM pin Q2
+       q3            ; Logic expression for EEPROM pin Q3
+       q4            ; Logic expression for EEPROM pin Q3
+       q5            ; Logic expression for EEPROM pin Q5
+       q6            ; Logic expression for EEPROM pin Q6
+       q7            ; Logic expression for EEPROM pin Q7
+)
 ```
 
-* show - (t / nil) Print the truth table to console so we can check what we're doing
-* filename - (nil / string) Save the binary output to this file (if not nil)
+* show - (t / nil) Show truth table on console so we can see how our expressions behave
+* filename - (nil / string) If not nil: Save binary output to this filename
 * firstAddr - Generate from this address (usually 0)
-* lastAddr - Generate to this address (see [eeprom sizes](#eeprom-sizes)))
-* q0 - Logic for EEPROM pin Q0
-* q1 - Logic for EEPROM pin Q1
-* q2 - Logic for EEPROM pin Q2
-* q3 - Logic for EEPROM pin Q3
-* q4 - Logic for EEPROM pin Q3
-* q5 - Logic for EEPROM pin Q5
-* q6 - Logic for EEPROM pin Q6
-* q7 - Logic for EEPROM pin Q7
+* lastAddr - Generate to this address (Usually EEPROM size, see [eeprom sizes](#eeprom-sizes)))
 
-You generally want "show" to be nil when generating the full truth-table, because, it's a lot of output nobody's ever going to read.
 
-"firstAddr" and "lastAddr" are useful when developing logic, generate a piece of the table and see if everything is as expected.
+You want "show" to be nil when generating a full truth-table, otherwise it's a lot of output.
 
-If you want to check the output of just a single pattern, you can set them as the same value. The #b prefix to a number is convenient, so you can type in the binary pattern you want to see the output for. For example, to check only happens when both A0 and A2 is set, you could set them both to #b101
+If you want to check the output of just a single pattern, you can set "firstAddr" and "lastAddr" to the same value, or a short range covering the patterns you want to check. The #b prefix to a number is convenient, so you can type in the binary pattern you want to see the output for. For example, to check what happens when both A0 and A2 is set, you could set both "firstAddr" and "lastAddr" to #b101
 
-The "q" parameters are lambda functions, but don't let that scare you, they're easy to make with the ["q" macro](#q)
+The "q" parameters are lambda functions, but you won't notice that, use [the Q macro](#q) to write them.
 
-It should be noted that the bit-order of the "truth" function uses LSB (least significant bit first) because, I find it's easier to
-understand that I'm defining the first bit first and the alst bit last... While all other representations, lists and functions use MSB (most significant bit first).
+_Note_: The bit-order of the "truth" function is LSB (least significant bit first) because, I find it's easier to
+understand that I'm defining the expression for the first bit first and the last bit last... This means that the q0 parameter to "truth" defines  the logic behaviour for output bit 0, so it is the _rightmost_ bit in the truth table.
 
-This means that the q0 parameter defines the logic behaviour for output bit 0, and so it is the RIGHTMOST bit in the truth table.
+_Everywhere else, the bit-order is MSB (most significant bit  first)._
 
-Take a look at the examples.lisp file, it makes it very clear.
+[Truth overview](#truth)
 
 #### Truth checks
-The truth function will check that all functions has returned both t and nil (that they are not always providing the same output), this check will fail if you write some logical error, such as (and a0 (not a0)).
+The truth function will check that all functions returned both t and nil at some point (that they are not always providing the same output), this check will fail if you write some logical error, such as ```(and a0 (not a0))```.
 
-It will often fail when not generating the entire table.
+It will often fail when not generating the entire table, so if you expect your check to pass, but it fails, try using the full address range.
 
-Use the :on and :off symbol to indicate that logic is not implemented for an output (see Q).
+If you don't want to implement any behaviour for an output, use the  ```:on ``` or  ```:off ``` symbol, instead of t or nil. This allows the checker to understand that it's intended that those outputs never change.
+```lisp
+(q () :off) ; Bit always off
+```
 
+[Truth overview](#truth)
 #### EEPROM Sizes
 
-When generating a binary output file for programming into the EEPROM, be sure to select the correct firstAddr (always 0!) and lastAddr (see below).
+When generating a binary output file for writing to the EEPROM, be sure to select the correct "firstAddr" and "lastAddr".
 
-If you set the lastAddr value too small, your eeprom won't be fully programmed any floating address pins may generate wrong results.
+"firstAddr" should probably always be 0.
 
-If you set the lastAddr value too large, the generated binary is too big and won't fit on the chip, you may truncate it, it might or might not work, but the logic check wouldn't have warned you if you requested address bits from pins not actually present on your chip.
+If you set the "lastAddr" value too small, your chip won't be fully programmed any floating address pins may generate wrong results.
 
-An easy way to set the right "lastAddr" is to simply count the address pins on your chip, and punch 1 for every pin, that binary number is your "lastAddr", you can prefix a binary number with ```#b``` and use it directly.
+If you set the "lastAddr" value too large, the generated binary is too big and won't fit on the chip, you may truncate it, it might or might not work, but the logic check wouldn't have warned you if you requested address bits from pins not actually present on your chip.
+
+An easy way to set the right "lastAddr" is to simply count the address pins on your chip, and punch 1 for every pin, that binary number is your "lastAddr", you can prefix a binary number with ```#b``` and use it directly
+
+Example: For a chip with 10 address pins, the "lastAddr" is the binary number "ten ones", so #b1111111111 in binary, #x3FF in hex and  1023 in decimal.
+
+"truth" don't care which representation you use, they're all the same number.
 
 | Chip  |    Size | Arrangement | Available addresses | lastAddr |
 |-------|---------|-------------|---------------------|----------|
@@ -144,109 +165,150 @@ An easy way to set the right "lastAddr" is to simply count the address pins on y
 |  2704 |  4 Kbit |     512 X 8 |            A0 to A8 |     #xFF |
 
 
-Note: "truth" don't care if you request address bits for pins not on your chip, those bits will always be set to 0, and your logic will not work.
+Note: "truth" don't detect if you request address bits for pins not on your chip, those bits will always be set to 0, and your logic will not work.
 
-[To the top](#stuff-this-provides)
+[Truth overview](#truth)
+
+[Package overview](#documentation--reference)
 ### Q
 
-The Q macro helps you write logic definitions for an output pin (the data or "Q" pin on the EEPROM chip)
+* [The Q Macro](#the-q-macro)
+* [Q - More detail](#q-extra-neatness)
+* [Q - Slightly weird stuff](#q-brain-melty-extra-messiness)
+* [Q - Clarification](#q-clarification)
+
+
+### The Q Macro
+The Q macro allows you to write a logic expression for an output pin (the data or "Q" pin on the EEPROM chip).
+
+You must provide an expression for each of the q0..q7 parameters that the [truth](#truth) function takes.
+
+Usage:
 ```lisp
-(q (inputs) logic)
+(q 
+       (inputs)
+       logic)
 ```
 
-This macro allows you to describe the logic for a single output bit. The logic will then be evaluated by "truth" for every possible input combination and its resulting state saved in the truth table.
-
-It works by you telling which information you want available, and then some logic that returns the state of the bit based on that information.
-
-You can do whatever LISPness you want in there, but of course, you can't have state, so reading/setting variables probably won't give the results you want.
-
-The return value of your function must be t or nil.
-
-Here's an example, where we want pins A0, A5 and A10 for some reason, and we determine the output to be t if any two bits are set and nil in all other cases.
-
-Since we're not constrained to gate-logic, we can just convert the binary state of the pins to either 1 and 0 and add them, if the sum is 2, then any two were set.
-
+Example usage:
 ```lisp
-(q (a0 a5 a10) (eq (+ (btn a0) (btn a5) (btn a10)) 2))
+(truth t nil 0 3                   ; Show truth table for address 0..3
+       (q                          ; Create expression for pin Q0
+              (a2 a5)              ; Request the a2 and a5 variables
+              (and a2 (not a5)))   ; Implement the expression
+
+       (q                          ; Create expression for pin Q1
+              (a1)                 ; Request the a1 variable
+              (not a1))            ; Set pin Q1 to the inverse of A1
+       
+       (q                          ; Create expression for pin Q2
+              (a2)                 ; Request a2 variable
+              a2)                  ; Set pin Q2 equal to the state of A2
+       ;; Snip for brewity, but all 8 Qs must be provided.
 ```
 
-Another example, where we define an "or" gate that takes pins aa0 and a1 as input (this is perfectly okay even though we used a0 in the previous example)
+The logic expression is evaluated by "truth" for every possible input combination and its resulting state saved in the truth table.
+
+It works by you telling which input bits (address pins on the EEPROM chip) you want to consider in your expression, and an expression that returns the desired state of the output bit based on the state of those input bits.
+
+
+You can do whatever LISP you want in your expression, but remember each expression is evaluated only once per bitpattern, there's no state to be modified inside the EEPROM.
+
+_Your expression must return t or nil._
+
+Here's an example, where we want pins A0, A5 and A10 for some reason, and we want the output bit to be 1 if exactly any two bits are set and 0 otherwise.
+
+We could implement this with pure boolean logic. But all of LISP is available and we can solve it however we please. In this example I convert the boolean state of the pins to numbers (1 or 0) and sum them, if the result is 2, then exactly two of the input pins were high.
+
 ```lisp
-(q (a0 a1) (and a0 a1))
+(q (a0 a5 a10) ; Request the a0 a5 and a10 variables
+       (eq (+ (btn a0) (btn a5) (btn a10)) 2)) ; The logic expression
 ```
 
+_Remember that you can use the same input in as many of your expressions as you want:_
 
-The reason for using this rather than nil or t is that "truth" will check that all bits flip at least once to help find logic errors, these symbols allow you to express that no change in output is intentional.
+```lisp
+(truth t nil 0 1
+       (q (a0 a1) (and a0 a1)) ; q0 - Uses a0
+       (q (a1 a2) (and a1 a2)) ; q1 - Also uses a0
+       ; ... snip for brewity, all 8 Qs must be provided
+```
+
+[Q overview](#q)
 
 #### Q Extra neatness!
-Q provides two other interesting inputs, the first is easist to understand: "adr", the integer value on the address bus.
+Q provides two other inputs, the first is easy to understand: "adr", the integer value on the address bus.
 
-In this example, we want our output pin to be true whever the number present on the bus is in the range 16384..24576
+In this example, we want the output pin to be high whever the number present on the bus is in the range 16384..24576
+
 ```lisp
-(q (adr) (and (=>adr 16384) (<= adr 24576)))
+(q (adr) (and (>= adr 16384) (<= adr 24576)))
 ```
 
-Here we want our output pin true only on address 34215
+We can also check for a specific address:
 ```lisp
 (q (adr) (eq adr 34215))
 ```
 
+_The adr variable is convenient for creating memory mappers, decoders and bus controllers._
 
+[Q overview](#q)
 #### Q Brain-melty extra messiness!
-The next feature is slightly less obvious, but you, when defining logic functions for output pins HIGHER than 0, you can also access the output state of all the lower pins!
+The next feature is slightly less obvious: When defining logic expressions for output pins HIGHER than q0, you can also access the output state of all the lower pins!
 
-That means, that for q0, there's no such feature, because there is no lower pins, and for q1, you can only access the output of D0.. But for q7, you can access the output of
-pins D0..D6!
+For q0, there's no extra information, because there is no lower pin.
 
-In this example, we define q7, let's say we want d7 to be high if ANY other pin is high (yes, I chose OR because it's the LISP build one and it takes any number of arguments while my own ones are lazy and take only two)
+For q1, you can access the output of q0 through a variable named d0
+
+For q7, you can access the output of q0..q6 through variables d0..d6!
+
+In this example, we define q7, let's say we want q7 to be high if _any_ other pin is high:
 
 ```lisp
-(o (d0 d1 d2 d3 d4 d5 d6) (or d0 d1 d2 d3 d4 d5 d6))
+(q (d0 d1 d2 d3 d4 d5 d6) (or d0 d1 d2 d3 d4 d5 d6))
 ```
 
-Of course you're allowed to mix them all, say this might be for o3
+You're allowed to mix them all, say this might be for o3
 ```lisp
-(o (d1 a0 adr) (and (> adr 5) (or d1 a0)))
+(q (d1 a0 adr) (and (> adr 5) (or d1 a0)))
 ```
 
 #### Q Clarification
 
-The q macro allows you to "ask" for a0..a19 d0..d6 and adr and use those to determine the resulting state.
+The q macro allows you to request for for variables a0..a19 d0..d6 and "adr" to be available in your expression body, and then define a logic expression using those variables to determine the output state for the bit.
 
-adr is a number, a0..a19 and d0..d6 are boolean.
+"adr" is a number, a0..a19 and d0..d6 are boolean.
 
-Wonder how to tell the q macro which bit you're defining output state for ?
+_Wonder how to tell the q macro which bit you're defining output state for ?_
 
-You don't! The argument position in the call to "truth" determines this, "truth" calls the functions in order from q0 to q7, which is also why the output of "lower numbered" data pins is available.
+The argument position in the call to "truth" determines this. "truth" calls the every function in order from q0 to q7, first function describes expression for lowest bit, this should be clear if you re-read the [truth function](#truth-function) description.
 
-Wonder how to tell the q macro that you don't want to implement anything on a pin, and not have the checker tell you about "stuck bits" ? 
+_Wonder how to tell the q macro that you don't want to implement anything on a pin, and not have the checker tell you about "stuck bits" ?_  See the [truth checks](#truth-checks) section.
 
-You can set the pin permanently high or low by using :on or :off
-```lisp
-(q () :off)
-```
+[Q overview](#q)
 
-[To the top](#stuff-this-provides)
+[Package overview](#documentation--reference)
 
-### ltn
-Convert list of booleans, representing a binary number to a number, most significant bit first in list.
+### Ltn
+Convert list of booleans representing a binary number to a number, most significant bit first in list.
 
 ```lisp
 (ltn (list t t nil)) ; => 6
 ```
 
-[To the top](#stuff-this-provides)
+[Package overview](#documentation--reference)
 
-### btn
-Convert boolean to number. 
+### Btn
+Convert a single boolean to number. 
 
 ```lisp
-(btn (nil)) returns 0 and (btn (t)) ; => 1
+(btn (nil)) ; => 0
+(btn (t))   ; => 1
 ```
 
-[To the top](#stuff-this-provides)
+[Package overview](#documentation--reference)
 
-### gates 
+### Gates 
 The gates nand nor xor xnor implement the logic functions they're named after.
 
 They all take exactly two boolean arguemnts and return a boolean value.
@@ -255,3 +317,7 @@ They all take exactly two boolean arguemnts and return a boolean value.
 (xor a1 a5)
 (nor d1 a6)
 ```
+
+_Remember, LISP also provides logic functions that you can use, among them are ```not```, ```and```, ```or```, ```if```, ```eq```, ```>```, ```>=```, ```<=```, ```logbitp``` and lots of other stuff I don't know about, but as long as it ends up t or nil, it's fine to use._
+
+[Package overview](#documentation--reference)
