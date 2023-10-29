@@ -114,28 +114,33 @@
                             :a1 (logbitp 1 i)
                             :a0 (logbitp 0 i))))
 
-                  (let ((inaddrNumeric (loop for (_ value) on (cdr (cdr inaddr)) by #'cddr collect (if value 1 0))))
-                            (let ((r0 (funcall o0 inaddr)))
-                                (let ((r1 (funcall o1 (append inaddr (list :d0 r0)))))
-                                    (let ((r2 (funcall o2 (append inaddr (list :d0 r0 :d1 r1)))))
-                                        (let ((r3 (funcall o3 (append inaddr (list :d0 r0 :d1 r1 :2 r2)))))
-                                            (let ((r4 (funcall o4 (append inaddr (list :d0 r0 :d1 r1 :d2 r2 :d3 r3)))))
-                                                (let ((r5 (funcall o5 (append inaddr (list :d0 r0 :d1 r1 :d2 r2 :d3 r3 :d4 r4)))))
-                                                    (let ((r6 (funcall o6 (append inaddr (list :d0 r0 :d1 r1 :d2 r2 :d3 r3 :d4 r4 :d5 r5)))))
-                                                        (let ((r7 (funcall o7 (append inaddr (list :d0 r0 :d1 r1 :d2 r2 :d3 r3 :d4 r4 :d5 r5 :d6 r6)))))
+                        (let* ((inaddrNumeric (loop for (_ value) on (cdr (cdr inaddr)) by #'cddr collect (if value 1 0)))
+                               (r0 (funcall o0 inaddr))
+                               (r1 (funcall o1 (append inaddr (list :d0 r0))))
+                               (r2 (funcall o2 (append inaddr (list :d0 r0 :d1 r1))))
+                               (r3 (funcall o3 (append inaddr (list :d0 r0 :d1 r1 :2 r2))))
+                               (r4 (funcall o4 (append inaddr (list :d0 r0 :d1 r1 :d2 r2 :d3 r3))))
+                               (r5 (funcall o5 (append inaddr (list :d0 r0 :d1 r1 :d2 r2 :d3 r3 :d4 r4))))
+                               (r6 (funcall o6 (append inaddr (list :d0 r0 :d1 r1 :d2 r2 :d3 r3 :d4 r4 :d5 r5))))
+                               (r7 (funcall o7 (append inaddr (list :d0 r0 :d1 r1 :d2 r2 :d3 r3 :d4 r4 :d5 r5 :d6 r6)))))
 
-                                                                (update-states s0 r0 s1 r1 s2 r2 s3 r3 s4 r4 s5 r5 s6 r6 s7 r7)
-                                                                (let ((databits (list
-                                                                    (if r7 1 0)
-                                                                    (if r6 1 0)
-                                                                    (if r5 1 0)
-                                                                    (if r4 1 0)
-                                                                    (if r3 1 0)
-                                                                    (if r2 1 0)
-                                                                    (if r1 1 0)
-                                                                    (if r0 1 0))))
-                                                                                    
-                                                                    (list :adr i :adrbits inaddrnumeric :databits databits :datanumeric (reduce (lambda (acc bit) (+ (* acc 2) bit )) databits :initial-value 0))))))))))))))))
+                          (update-states s0 r0 s1 r1 s2 r2 s3 r3 s4 r4 s5 r5 s6 r6 s7 r7)
+                          (let ((databits (list
+                                           (if r7 1 0)
+                                           (if r6 1 0)
+                                           (if r5 1 0)
+                                           (if r4 1 0)
+                                           (if r3 1 0)
+                                           (if r2 1 0)
+                                           (if r1 1 0)
+                                           (if r0 1 0))))
+
+                            (list :adr i
+                                  :adrbits inaddrnumeric
+                                  :databits databits
+                                  :datanumeric (reduce (lambda (acc bit) (+ (* acc 2) bit))
+                                                       databits
+                                                       :initial-value 0))))))))
             
             (if show 
                 (progn
